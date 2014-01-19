@@ -50,7 +50,7 @@ class wechatCallbackapiTest
 			$RX_TYPE = trim($postObj->MsgType);
 			
 			$myString = $this->debugFuc($postObj, $RX_TYPE);
-			//echo $myString;
+            //echo $myString;
 
 			switch ($RX_TYPE)
 			{
@@ -86,6 +86,28 @@ class wechatCallbackapiTest
 			exit;
 		}
 	}
+    
+	private function articleAndPic($object, $title, $desription, $image, $turl)
+	{
+		$picTpl = "<xml>
+		<ToUserName><![CDATA[%s]]></ToUserName>
+		<FromUserName><![CDATA[%s]]></FromUserName>
+		<CreateTime>%s</CreateTime>
+		<MsgType><![CDATA[news]]></MsgType>
+		<ArticleCount>1</ArticleCount>
+		<Articles>
+		<item>
+		<Title><![CDATA[%s]]></Title>
+		<Description><![CDATA[%s]]></Description>
+		<PicUrl><![CDATA[%s]]></PicUrl>
+		<Url><![CDATA[%s]]></Url>
+		</item>
+		</Articles>
+		<FuncFlag>1</FuncFlag>
+		</xml> ";
+		$resultStr = sprintf($picTpl, $object->FromUserName, $object->ToUserName, time(), $title, $desription, $image, $turl);
+		return $resultStr;
+	}
 	
 	private function transmitText($object, $content, $flag = 0)
     {
@@ -113,7 +135,11 @@ class wechatCallbackapiTest
     {
         $funcFlag = 0;
         $contentStr = "你发送的是文本，内容为：".$object->Content; // .<a href="http://blog.csdn.net/lyq8479">柳峰的博客</a>;
-        $resultStr = $this->transmitText($object, $contentStr, $funcFlag);
+        //$resultStr = $this->transmitText($object, $contentStr, $funcFlag);
+        $desription = "刘佳炜测试";
+		$image = "http://avatar.csdn.net/1/4/A/1_lyq8479.jpg";
+		$turl = "http://blog.csdn.net/lyq8479";
+		$resultStr = $this->articleAndPic($object, $contentStr, $desription, $image, $turl);
         return $resultStr;
     }
 	
