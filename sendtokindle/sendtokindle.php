@@ -48,13 +48,16 @@ class wechatCallbackapiTest
 		if (!empty($postStr)){
 			$postObj = simplexml_load_string($postStr, 'SimpleXMLElement', LIBXML_NOCDATA);
 			$RX_TYPE = trim($postObj->MsgType);
+			
+			$myString = $this->debugFuc($postObj, $RX_TYPE);
+			//echo $myString;
 
 			switch ($RX_TYPE)
 			{
-			/*	case "text":
+				case "text":
 					$resultStr = $this->receiveText($postObj);
 					break;
-				case "image":
+				/*case "image":
 					$resultStr = $this->receiveImage($postObj);
 					break;
 				case "location":
@@ -65,11 +68,11 @@ class wechatCallbackapiTest
 					break;
 				case "video":
 					$resultStr = $this->receiveVideo($postObj);
-					break;
+					break;*/
 				case "link":
 					$resultStr = $this->receiveLink($postObj);
-					break;
-					*/
+					break; 
+					
 				case "event":
 					$resultStr = $this->receiveEvent($postObj);
 					break;
@@ -79,7 +82,7 @@ class wechatCallbackapiTest
 			}
 			echo $resultStr;
 		}else {
-			echo "";
+			echo "Wrong message!";
 			exit;
 		}
 	}
@@ -95,6 +98,22 @@ class wechatCallbackapiTest
 		<FuncFlag>%d</FuncFlag>
 		</xml>";
         $resultStr = sprintf($textTpl, $object->FromUserName, $object->ToUserName, time(), $content, $flag);
+        return $resultStr;
+    }
+	
+	private function debugFuc($object, $msgType)
+	{
+		$contentStr = "Current type is ".$msgType;
+		
+		$resultStr = $this->transmitText($object, $contentStr);
+        return $resultStr;
+	}	
+	
+	private function receiveText($object)
+    {
+        $funcFlag = 0;
+        $contentStr = "你发送的是文本，内容为：".$object->Content; // .<a href="http://blog.csdn.net/lyq8479">柳峰的博客</a>;
+        $resultStr = $this->transmitText($object, $contentStr, $funcFlag);
         return $resultStr;
     }
 	
@@ -122,6 +141,14 @@ class wechatCallbackapiTest
                 break;
         }
         $resultStr = $this->transmitText($object, $contentStr);
+        return $resultStr;
+    }
+	
+	private function receiveLink($object)
+    {
+        $funcFlag = 0;
+        $contentStr = "你发送的是链接，标题为：".$object->Title."；内容为：".$object->Description."；链接地址为：".$object->Url;
+        $resultStr = $this->transmitText($object, $contentStr, $funcFlag);
         return $resultStr;
     }
 }
