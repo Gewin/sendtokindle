@@ -55,7 +55,7 @@ class wechatCallbackapiTest
 			  switch ($RX_TYPE)
 				{
 					case "text":
-						$resultStr = $this->receiveText($postObj);
+						$resultStr = $this->language($postObj);
 						break;
 					/*case "image":
 						$resultStr = $this->receiveImage($postObj);
@@ -86,6 +86,45 @@ class wechatCallbackapiTest
 			  exit;
 		}
 	}
+	
+	private function language($object){
+        $value = urlencode($object->Content);
+		$qurl = 'http://fanyi.youdao.com/openapi.do?keyfrom=Liujiawei&key=2017678959&type=data&doctype=json&version=1.1&q='.$value;
+		$f = new SaeFetchurl(); 
+		$content = $f->fetch($qurl); 
+		$sina = json_decode($content,true); 
+		$errorcode = $sina['errorCode'];
+		$phonetic = $sina['basic']['phonetic']; 
+		$explains = $sina['basic']['explains']['0'];
+		$interpret = $sina['basic']['explains']['1'];
+		$interprets = $sina['basic']['explains']['2'];
+		$trans = '';
+		if (isset($errorcode)){
+			switch ($errorcode){
+				case 0:
+						$trans = $sina['translation']['0'];
+				break;
+				case 20:
+						$trans = '要翻译的文本过长';
+				break;
+				case 30:
+						$trans = '无法进行有效的翻译';
+				break;
+				case 40:
+						$trans = '不支持的语言类型';
+				break;
+				case 50:
+						$trans = '无效的key';
+				break;
+				default:
+						$trans = '出现异常';
+				break;
+			}
+		}
+		$contentStr = $trans."\n".$phonetic."\n".$explain."\n".$interpret."\n".$interprets;
+		$resultStr = $this->transmitText($object, $contentStr);
+        return $resultStr; 
+    }
     
 	private function articleAndPic($object, $title, $desription, $image, $turl)
 	{
@@ -135,11 +174,11 @@ class wechatCallbackapiTest
     {
         $funcFlag = 0;
         $contentStr = "你发送的是文本，内容为：".$object->Content; // .<a href="http://blog.csdn.net/lyq8479">柳峰的博客</a>;
-        //$resultStr = $this->transmitText($object, $contentStr, $funcFlag);
-        $desription = "刘佳炜测试";
-		$image = "http://image.baidu.com/i?ct=503316480&tn=baiduimagedetail&cg=art&ipn=d&ic=0&lm=-1&word=%E9%A3%8E%E6%99%AF&ie=utf-8&in=3354&cl=2&st=&pn=4&rn=1&di=&fr=&&fmq=1378374347070_R&se=&sme=0&tab=&face=&&istype=&ist=&jit=&objurl=http%3A%2F%2Fpica.nipic.com%2F2007-12-23%2F200712231523651_2.jpg#pn4&-1&di&objURLhttp%3A%2F%2Fpica.nipic.com%2F2007-12-23%2F200712231523651_2.jpg&fromURLippr_z2C%24qAzdH3FAzdH3Fooo_z%26e3Bgtrtv_z%26e3Bv54AzdH3Ffi5oAzdH3FdAzdH3FbAzdH3F0jamdjdvw1nljdaw_z%26e3Bip4s&W1024&H640&T&S&TP0";
-		$turl = $object->Content;
-		$resultStr = $this->articleAndPic($object, $contentStr, $desription, $image, $turl);
+        $resultStr = $this->transmitText($object, $contentStr, $funcFlag);
+        //$desription = "刘佳炜测试";
+		//$image = "http://image.baidu.com/i?ct=503316480&tn=baiduimagedetail&cg=art&ipn=d&ic=0&lm=-1&word=%E9%A3%8E%E6%99%AF&ie=utf-8&in=3354&cl=2&st=&pn=4&rn=1&di=&fr=&&fmq=1378374347070_R&se=&sme=0&tab=&face=&&istype=&ist=&jit=&objurl=http%3A%2F%2Fpica.nipic.com%2F2007-12-23%2F200712231523651_2.jpg#pn4&-1&di&objURLhttp%3A%2F%2Fpica.nipic.com%2F2007-12-23%2F200712231523651_2.jpg&fromURLippr_z2C%24qAzdH3FAzdH3Fooo_z%26e3Bgtrtv_z%26e3Bv54AzdH3Ffi5oAzdH3FdAzdH3FbAzdH3F0jamdjdvw1nljdaw_z%26e3Bip4s&W1024&H640&T&S&TP0";
+		//$turl = $object->Content;
+		//$resultStr = $this->articleAndPic($object, $contentStr, $desription, $image, $turl);
         return $resultStr;
     }
 	
