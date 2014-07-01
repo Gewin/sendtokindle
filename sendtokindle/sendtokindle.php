@@ -1,7 +1,8 @@
 <?php
 /*
-    方倍工作室 http://www.cnblogs.com/txw1958/
-    CopyRight 2013 www.doucube.com  All Rights Reserved
+    Author : Liujiawei
+	QQ: 971872834
+	Mail: ljwlh54@163.com
 */
 
 define("TOKEN", "weixin");
@@ -42,20 +43,51 @@ class wechatCallbackapiTest
         }
     }
 
+	private function transmitNews($object, $newsArray)
+    {
+        if(!is_array($newsArray)){
+            return;
+        }
+        $itemTpl = "<item>
+        <Title><![CDATA[%s]]></Title>
+        <Description><![CDATA[%s]]></Description>
+        <PicUrl><![CDATA[%s]]></PicUrl>
+        <Url><![CDATA[%s]]></Url>
+		</item>";
+        $item_str = "";
+        foreach ($newsArray as $item){
+            $item_str .= sprintf($itemTpl, $item['Title'], $item['Description'], $item['PicUrl'], $item['Url']);
+        }
+        $newsTpl = "<xml>
+		<ToUserName><![CDATA[%s]]></ToUserName>
+		<FromUserName><![CDATA[%s]]></FromUserName>
+		<CreateTime>%s</CreateTime>
+		<MsgType><![CDATA[news]]></MsgType>
+		<Content><![CDATA[]]></Content>
+		<ArticleCount>%s</ArticleCount>
+		<Articles>
+		$item_str</Articles>
+		</xml>";
+
+        $result = sprintf($newsTpl, $object->FromUserName, $object->ToUserName, time(), count($newsArray));
+        return $result;
+    }
     public function responseMsg()
 	  {
 		    $postStr = $GLOBALS["HTTP_RAW_POST_DATA"];
 				if (!empty($postStr)){
 			  $postObj = simplexml_load_string($postStr, 'SimpleXMLElement', LIBXML_NOCDATA);
 			  $RX_TYPE = trim($postObj->MsgType);
+			  $keyword = trim($postObj->Content);
 			
-			  $myString = $this->debugFuc($postObj, $RX_TYPE);
+			  //$myString = $this->debugFuc($postObj, $RX_TYPE);
             //echo $myString;
 
 			  switch ($RX_TYPE)
 				{
 					case "text":
-						$resultStr = $this->language($postObj);
+						$content = $this->getWeatherInfo($keyword);
+						$resultStr = $this->transmitNews($postObj, $content);
 						break;
 					/*case "image":
 						$resultStr = $this->receiveImage($postObj);
@@ -125,6 +157,37 @@ class wechatCallbackapiTest
 		$resultStr = $this->transmitText($object, $contentStr);
         return $resultStr; 
     }
+	
+	private function getWeatherInfo($cityName)
+	{
+		if ($cityName == "" || (strstr($cityName, "+"))){
+			return "发送天气+城市，例如'天气深圳'";
+		}
+		$url = "http://api.map.baidu.com/telematics/v3/weather?location=".urlencode($cityName)."&output=json&ak=1ZTLRAaXEExs3TtUubjroIOi";
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$output = curl_exec($ch);
+		curl_close($ch);
+		$result = json_decode($output, true);
+		if ($result["error"] != 0){
+			return $result["status"];
+		}
+		$curHour = (int)date('H',time());
+		$weather = $result["results"][0];
+		$weatherArray[] = array("Title" =>$weather['currentCity']."天气预报", "Description" =>"", "PicUrl" =>"", "Url" =>"");
+		for ($i = 0; $i < count($weather["weather_data"]); $i++) {
+			$weatherArray[] = array("Title"=>
+				$weather["weather_data"][$i]["date"]."\n".
+				$weather["weather_data"][$i]["weather"]." ".
+				$weather["weather_data"][$i]["wind"]." ".
+				$weather["weather_data"][$i]["temperature"],
+			"Description"=>"", 
+			"PicUrl"=>(($curHour >= 6) && ($curHour < 18))?$weather["weather_data"][$i]["dayPictureUrl"]:$weather["weather_data"][$i]["nightPictureUrl"], "Url"=>"");
+		}
+		return $weatherArray;
+	}
+
     
 	private function articleAndPic($object, $title, $desription, $image, $turl)
 	{
